@@ -1,0 +1,63 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php-dev
+    environment:
+      MAIL_Host: ${MAIL_Host}
+      MAIL_SMTPAuth: ${MAIL_SMTPAuth}
+      MAIL_Username: ${MAIL_Username}
+      MAIL_Password: ${MAIL_Password}
+      MAIL_SMTPSecure: ${MAIL_SMTPSecure}
+      MAIL_Port: ${MAIL_Port}
+    volumes:
+      - ./:/var/www/html
+      - ./vendor:/var/www/html/vendor
+    networks:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-dev
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-dev
+    ports:
+      - "8888:80"
+    volumes:
+      - ./:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - backend
+
+  node:
+    image: node:22-alpine
+    container_name: node-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - backend
+
+volumes:
+  db-data:
+
+networks:
+  backend:
